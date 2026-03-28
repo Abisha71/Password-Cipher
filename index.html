@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Cipher</title>
+
+    <!-- CryptoJS Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <!-- Main CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- ========== LOGIN SCREEN ========== -->
+    <div id="login-screen" class="screen active">
+        <div class="login-bg-grid"></div>
+        <div class="login-container">
+            <div class="vault-logo">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 4a3 3 0 0 1 3 3 3 3 0 0 1-3 3 3 3 0 0 1-3-3 3 3 0 0 1 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
+                </div>
+                <h1>Password Cipher</h1>
+                <div class="tagline">SECURE PASSWORD MANAGER</div>
+            </div>
+            <div class="login-card">
+                <h2>ACCESS CONTROL</h2>
+                <div class="sub">ENTER MASTER PASSWORD TO UNLOCK</div>
+                <div class="field-group">
+                    <label class="field-label">MASTER PASSWORD</label>
+                    <div class="field-input-wrap">
+                        <input type="password" class="field-input" id="master-pwd-input" placeholder="••••••••••••" autocomplete="off">
+                        <button class="toggle-vis" onclick="toggleVis('master-pwd-input', this)" tabindex="-1">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        </button>
+                    </div>
+                </div>
+                <button class="btn-primary" onclick="handleLogin()">UNLOCK VAULT</button>
+                <div class="login-status" id="login-status"></div>
+                <div class="setup-hint" id="setup-hint" style="display:none;">
+                    🔐 FIRST TIME SETUP — This password will become your master key. Store it safely; it cannot be recovered.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== MAIN APP SCREEN ========== -->
+    <div id="app-screen" class="screen">
+        <!-- Topbar -->
+        <div class="topbar">
+            <div class="topbar-logo">Pass<span>word</span>Cipher</div>
+            <div class="topbar-sep"></div>
+            <div class="lock-timer">
+                <div class="dot" id="timer-dot"></div>
+                <span id="timer-display">LOCKS IN 02:00</span>
+            </div>
+            <div class="topbar-actions">
+                <button class="btn-icon" onclick="exportData()" title="Export">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    <span>EXPORT</span>
+                </button>
+                <label class="btn-icon" title="Import" style="cursor:pointer;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    <span>IMPORT</span>
+                    <input type="file" accept=".json" style="display:none;" onchange="importData(event)">
+                </label>
+                <button class="btn-icon danger" onclick="lockVault()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    <span>LOCK</span>
+                </button>
+                <button class="btn-add" onclick="openModal()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    ADD
+                </button>
+            </div>
+        </div>
+
+        <div class="app-body">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <div class="sidebar-section">
+                    <div class="sidebar-title">FILTER</div>
+                    <!-- Sidebar items (same as you sent) -->
+                    <div class="sidebar-item active" onclick="filterCategory('all', this)" data-cat="all">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 6h16v2H4zm2 5h12v2H6zm3 5h6v2H9z"/></svg> ALL ENTRIES
+                        <span class="sidebar-badge" id="badge-all">0</span>
+                    </div>
+                    <div class="sidebar-item" onclick="filterCategory('work', this)" data-cat="work">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 6h-2.18c.07-.44.18-.88.18-1.36C18 2.51 15.49 0 12 0S6 2.51 6 4.64c0 .48.11.92.18 1.36H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-8-4c1.86 0 3 1.09 3 2.64 0 .48-.27.9-.43 1.36H9.43C9.27 5.54 9 5.12 9 4.64 9 3.09 10.14 2 12 2zm0 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg>                        WORK
+                        <span class="sidebar-badge" id="badge-work">0</span>
+                    </div>
+                    <div class="sidebar-item" onclick="filterCategory('social', this)" data-cat="social">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>                        SOCIAL
+                        <span class="sidebar-badge" id="badge-social">0</span>
+                    </div>
+                    <div class="sidebar-item" onclick="filterCategory('banking', this)" data-cat="banking">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.5 2C6.81 2 3 5.81 3 10.5S6.81 19 11.5 19h.5v3c4.86-2.34 8-7 8-11.5C20 5.81 16.19 2 11.5 2zm1 14.5h-2v-2h2v2zm0-4h-2c0-3.25 3-3 3-5 0-1.1-.9-2-2-2s-2 .9-2 2h-2c0-2.21 1.79-4 4-4s4 1.79 4 4c0 2.5-3 2.75-3 5z"/></svg>                        BANKING
+                        <span class="sidebar-badge" id="badge-banking">0</span>
+                    </div>
+                    <div class="sidebar-item" onclick="filterCategory('other', this)" data-cat="other">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg> OTHER
+                        <span class="sidebar-badge" id="badge-other">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="main-content" id="main-content">
+                <div class="content-header">
+                    <div class="search-wrap">
+                        <div class="search-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+                        <input type="text" class="search-input" id="search-input" placeholder="SEARCH ENTRIES..." oninput="renderCards()" autocomplete="off">
+                    </div>
+                    <div class="stats-pills">
+                        <div class="stat-pill"><span class="num" id="stat-total">0</span><span class="lbl">TOTAL</span></div>
+                        <div class="stat-pill"><span class="num" id="stat-strong">0</span><span class="lbl">STRONG</span></div>
+                        <div class="stat-pill"><span class="num" id="stat-weak">0</span><span class="lbl">WEAK</span></div>
+                    </div>
+                </div>
+                <div class="section-head">
+                    <h3>PASSWORD VAULT</h3>
+                    <span class="count" id="entries-count">0 ENTRIES</span>
+                </div>
+                <div class="pwd-grid" id="pwd-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== LOCKED OVERLAY ========== -->
+    <div id="locked-overlay">
+        <div class="login-container">
+            <div class="vault-logo">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+                </div>
+                <h1>VAULT</h1>
+                <div class="tagline">SESSION LOCKED</div>
+            </div>
+            <div class="login-card">
+                <h2>RE-AUTHENTICATE</h2>
+                <div class="sub">VAULT LOCKED DUE TO INACTIVITY</div>
+                <div class="field-group">
+                    <label class="field-label">MASTER PASSWORD</label>
+                    <div class="field-input-wrap">
+                        <input type="password" class="field-input" id="reauth-input" placeholder="••••••••••••" autocomplete="off" onkeydown="if(event.key==='Enter')handleReauth()">
+                        <button class="toggle-vis" onclick="toggleVis('reauth-input', this)" tabindex="-1">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        </button>
+                    </div>
+                </div>
+                <button class="btn-primary" onclick="handleReauth()">UNLOCK</button>
+                <div class="login-status" id="reauth-status"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== ADD/EDIT MODAL ========== -->
+    <div class="modal-backdrop" id="modal-backdrop">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modal-title">ADD ENTRY</h3>
+                <button class="modal-close" onclick="closeModal()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Modal form content (same as you sent) -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">SITE / APP NAME</label>
+                        <input type="text" class="form-input" id="f-site" placeholder="e.g. GitHub" autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">CATEGORY</label>
+                        <select class="form-input form-select" id="f-cat">
+                            <option value="work">💼 WORK</option>
+                            <option value="social">📱 SOCIAL</option>
+                            <option value="banking">💳 BANKING</option>
+                            <option value="other">📦 OTHER</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">USERNAME / EMAIL</label>
+                        <input type="text" class="form-input" id="f-user" placeholder="user@email.com" autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">URL (OPTIONAL)</label>
+                        <input type="text" class="form-input" id="f-url" placeholder="https://..." autocomplete="off">
+                    </div>
+                </div>
+                <div class="form-group full">
+                    <label class="form-label">
+                        PASSWORD
+                        <button type="button" onclick="toggleGenerator()" style="background:none;border:none;cursor:pointer;color:var(--red);font-family:var(--mono);font-size:10px;letter-spacing:1px;">⚡ GENERATOR</button>
+                    </label>
+                    <div class="pwd-input-wrap">
+                        <input type="password" class="form-input" id="f-pwd" placeholder="Enter password" autocomplete="new-password" oninput="checkStrength(this.value)">
+                        <button class="toggle-vis" onclick="toggleVis('f-pwd', this)" tabindex="-1">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        </button>
+                    </div>
+                    <div class="strength-meter" id="strength-meter">
+                        <div class="strength-track">
+                            <div class="strength-seg" id="seg1"></div>
+                            <div class="strength-seg" id="seg2"></div>
+                            <div class="strength-seg" id="seg3"></div>
+                            <div class="strength-seg" id="seg4"></div>
+                        </div>
+                        <div class="strength-text" id="strength-text" style="color:var(--text-muted);">— ENTER PASSWORD</div>
+                    </div>
+                </div>
+
+                <!-- Generator Panel -->
+                <div class="gen-panel" id="gen-panel">
+                    <div class="gen-panel-title">PASSWORD GENERATOR</div>
+                    <div class="gen-length">
+                        <span>LENGTH</span>
+                        <input type="range" min="8" max="64" value="20" id="gen-len" oninput="document.getElementById('gen-len-val').textContent=this.value; generatePassword()">
+                        <span class="len-val"><span id="gen-len-val">20</span></span>
+                    </div>
+                    <div class="gen-options">
+                        <label class="gen-check"><input type="checkbox" id="gen-sym" checked onchange="generatePassword()"> Symbols (!@#$)</label>
+                        <label class="gen-check"><input type="checkbox" id="gen-num" checked onchange="generatePassword()"> Numbers (0-9)</label>
+                        <label class="gen-check"><input type="checkbox" id="gen-upper" checked onchange="generatePassword()"> Uppercase</label>
+                        <label class="gen-check"><input type="checkbox" id="gen-lower" checked onchange="generatePassword()"> Lowercase</label>
+                    </div>
+                    <div class="gen-result">
+                        <span class="gen-pwd-text" id="gen-pwd-text">Click refresh to generate</span>
+                        <button class="gen-refresh-btn" onclick="generatePassword()" title="Regenerate">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                        </button>
+                        <button class="gen-copy-btn" onclick="copyGenPwd()" title="Copy">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                        </button>
+                    </div>
+                    <button class="use-btn" onclick="useGeneratedPassword()">USE THIS PASSWORD</button>
+                </div>
+
+                <div class="form-group full">
+                    <label class="form-label">NOTES (OPTIONAL)</label>
+                    <textarea class="form-input" id="f-notes" rows="3" placeholder="Any extra info..." style="resize:vertical;"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="closeModal()">CANCEL</button>
+                <button class="btn-save" onclick="saveEntry()">SAVE ENTRY</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- ========== FOOTER ========== -->
+    <footer>
+        <div class="footer-content">
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 12px;">
+                <p style="color: #e8000d; font-family: var(--display); letter-spacing: 2px; font-size: 14px;">
+                    Created by Wesly Jeyananthan Abisha ❤️
+                </p>
+                <div style="display: flex; gap: 24px; justify-content: center;">
+                    <!-- GitHub -->
+                    <a href="https://github.com/Abisha71" target="_blank" style="display: flex; align-items: center; gap: 6px; color: var(--text); text-decoration: none;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577 0-.285-.01-1.044-.015-2.049-3.338.726-4.042-1.416-4.042-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.652 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222 0 1.604-.015 2.896-.015 3.286 0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                        </svg> GitHub
+                    </a>
+                    <!-- LinkedIn -->
+                    <a href="https://www.linkedin.com/in/abisha-wesly-jeyananthan-2a05a32b8" target="_blank" style="display: flex; align-items: center; gap: 6px; color: var(--text); text-decoration: none;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
+                        </svg> LinkedIn
+                    </a>
+                    <!-- Facebook -->
+                    <a href="https://www.facebook.com/share/18DbpQMBMf/" target="_blank" style="display: flex; align-items: center; gap: 6px; color: var(--text); text-decoration: none;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 5.004 3.657 9.127 8.438 9.878v-6.987H7.898v-2.891h2.54V9.845c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562v1.877h2.773l-.443 2.891h-2.33v6.987C18.343 21.127 22 17.004 22 12z"/>
+                        </svg> Facebook
+                    </a>
+                    <!-- YouTube -->
+                    <a href="https://youtube.com/@shaabi-u5k?feature=shared" target="_blank" style="display: flex; align-items: center; gap: 6px; color: #FF0000; text-decoration: none;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M23.498 6.186a2.998 2.998 0 0 0-2.115-2.123C19.155 3.5 12 3.5 12 3.5s-7.155 0-9.383.563a2.998 2.998 0 0 0-2.115 2.123C0 8.39 0 12 0 12s0 3.61.502 5.814a2.998 2.998 0 0 0 2.115 2.123C4.845 20.5 12 20.5 12 20.5s7.155 0 9.383-.563a2.998 2.998 0 0 0 2.115-2.123C24 15.61 24 12 24 12s0-3.61-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                        </svg> YouTube
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script src="script.js"></script>
+</body>
+
+</html>
